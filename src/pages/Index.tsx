@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -97,6 +98,9 @@ const getStatusColor = (status: RequestStatus) => {
 export default function Index() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole>(null);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
   const [requests, setRequests] = useState<Request[]>([
     {
       id: '001',
@@ -126,9 +130,36 @@ export default function Index() {
   });
 
   const handleLogin = (userId: string, role: UserRole) => {
+    const needsPassword = (userId === 'turkina' && role === 'mol') || (userId === 'kovalev' && role === 'head');
+    
+    if (needsPassword) {
+      setSelectedUser(userId);
+      setSelectedRole(role);
+      return;
+    }
+    
     setCurrentUser(userId);
     setCurrentRole(role);
-    toast.success(`Вход выполнен как ${USERS[userId as keyof typeof USERS].name} (${role === 'mol' ? 'МОЛ' : role === 'head' ? 'Начальник' : 'Специалист'})`);
+    toast.success(`Вход выполнен как ${USERS[userId as keyof typeof USERS].name} (${role === 'mol' ? 'МОЛ' : role === 'head' ? 'Начальник' : 'Специалист'})`)
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === '123') {
+      setCurrentUser(selectedUser);
+      setCurrentRole(selectedRole);
+      setPasswordInput('');
+      setSelectedUser(null);
+      setSelectedRole(null);
+      toast.success(`Вход выполнен как ${USERS[selectedUser as keyof typeof USERS].name} (${selectedRole === 'mol' ? 'МОЛ' : 'Начальник'})`);
+    } else {
+      toast.error('Неверный пароль');
+    }
+  };
+
+  const handleCancelPassword = () => {
+    setPasswordInput('');
+    setSelectedUser(null);
+    setSelectedRole(null);
   };
 
   const handleLogout = () => {
@@ -188,6 +219,47 @@ export default function Index() {
   };
 
   if (!currentUser || !currentRole) {
+    if (selectedUser && selectedRole) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-lg">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <Icon name="Lock" size={32} className="text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Введите пароль</CardTitle>
+              <CardDescription>
+                {USERS[selectedUser as keyof typeof USERS].name} — {selectedRole === 'mol' ? 'МОЛ' : 'Начальник Управления'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                  placeholder="Введите пароль"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handlePasswordSubmit} className="flex-1">
+                  <Icon name="LogIn" size={16} className="mr-2" />
+                  Войти
+                </Button>
+                <Button onClick={handleCancelPassword} variant="outline" className="flex-1">
+                  Отмена
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-lg">
